@@ -456,6 +456,7 @@
   <div class="admin-gate-panel">
     <h3>Owner Login</h3>
     <p>This area is only for the Touta's World owner.</p>
+    <div class="field"><label>Email</label><input type="email" id="adminEmail" placeholder="you@example.com"></div>
     <div class="field"><label>Password</label><input type="password" id="adminPass" placeholder="•••••••"></div>
     <p class="err-msg" id="gateErr">Wrong password, try again</p>
     <div class="admin-actions">
@@ -516,6 +517,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDkJGX8hEcLT8v9-t9R-tENgx3XfHIjdlk",
@@ -528,8 +530,8 @@ const firebaseConfig = {
 };
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
+const auth = getAuth(firebaseApp);
 
-const ADMIN_PASSWORD = "touta2026";
 let products = [];
 let orders = [];
 let messages = [];
@@ -819,21 +821,32 @@ document.getElementById('sendMessageBtn').addEventListener('click', async ()=>{
 document.getElementById('openGateBtn').addEventListener('click', ()=> document.getElementById('gateOverlay').style.display='flex');
 document.getElementById('gateCancelBtn').addEventListener('click', ()=>{
   document.getElementById('gateOverlay').style.display='none';
+  document.getElementById('adminEmail').value='';
   document.getElementById('adminPass').value=''; document.getElementById('gateErr').style.display='none';
 });
 document.getElementById('gateSubmitBtn').addEventListener('click', async ()=>{
-  const val = document.getElementById('adminPass').value;
-  if(val === ADMIN_PASSWORD){
+  const email = document.getElementById('adminEmail').value.trim();
+  const pass = document.getElementById('adminPass').value;
+  const gateErr = document.getElementById('gateErr');
+  gateErr.style.display = 'none';
+  if(!email || !pass){ gateErr.textContent = 'Please enter your email and password'; gateErr.style.display='block'; return; }
+  try{
+    await signInWithEmailAndPassword(auth, email, pass);
     isAdmin = true;
     document.getElementById('gateOverlay').style.display='none';
-    document.getElementById('adminPass').value=''; document.getElementById('gateErr').style.display='none';
+    document.getElementById('adminEmail').value='';
+    document.getElementById('adminPass').value='';
     document.getElementById('adminTopbar').style.display='flex';
     document.getElementById('addProductFab').style.display='block';
     await loadOrders(); await loadMessages();
     render();
-  } else { document.getElementById('gateErr').style.display='block'; }
+  } catch(err){
+    gateErr.textContent = 'Incorrect email or password, please try again';
+    gateErr.style.display='block';
+  }
 });
-document.getElementById('exitAdminBtn').addEventListener('click', ()=>{
+document.getElementById('exitAdminBtn').addEventListener('click', async ()=>{
+  try{ await signOut(auth); }catch(e){}
   isAdmin = false;
   document.getElementById('adminTopbar').style.display='none';
   document.getElementById('addProductFab').style.display='none';
