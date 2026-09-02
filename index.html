@@ -513,7 +513,22 @@
 
 <button class="cat-btn" id="addProductFab" style="display:none; position:fixed; bottom:24px; left:24px; z-index:90; box-shadow:0 6px 18px rgba(56,30,58,0.3);">+ Add product</button>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDkJGX8hEcLT8v9-t9R-tENgx3XfHIjdlk",
+  authDomain: "touta-s-world.firebaseapp.com",
+  projectId: "touta-s-world",
+  storageBucket: "touta-s-world.firebasestorage.app",
+  messagingSenderId: "354001442098",
+  appId: "1:354001442098:web:a3d372f6985bb4bdb2f32b",
+  measurementId: "G-W41GPVFHT0"
+};
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
+
 const ADMIN_PASSWORD = "touta2026";
 let products = [];
 let orders = [];
@@ -534,28 +549,37 @@ let activePickerTier = null;
 
 async function loadProducts(){
   try{
-    const res = await window.storage.get('toutasworld_products', true);
-    products = res && res.value ? JSON.parse(res.value) : [];
-  }catch(e){ products = []; }
+    const snap = await getDoc(doc(db, "toutasworld", "products"));
+    products = snap.exists() && snap.data().list ? snap.data().list : [];
+  }catch(e){ console.error(e); products = []; }
   render();
 }
-async function saveProducts(){ await window.storage.set('toutasworld_products', JSON.stringify(products), true); }
+async function saveProducts(){
+  try{ await setDoc(doc(db, "toutasworld", "products"), { list: products }); }
+  catch(e){ console.error(e); alert("Could not save — please check your connection and try again."); }
+}
 
 async function loadOrders(){
   try{
-    const res = await window.storage.get('toutasworld_orders', true);
-    orders = res && res.value ? JSON.parse(res.value) : [];
-  }catch(e){ orders = []; }
+    const snap = await getDoc(doc(db, "toutasworld", "orders"));
+    orders = snap.exists() && snap.data().list ? snap.data().list : [];
+  }catch(e){ console.error(e); orders = []; }
 }
-async function saveOrders(){ await window.storage.set('toutasworld_orders', JSON.stringify(orders), true); }
+async function saveOrders(){
+  try{ await setDoc(doc(db, "toutasworld", "orders"), { list: orders }); }
+  catch(e){ console.error(e); alert("Could not save your order — please check your connection and try again."); }
+}
 
 async function loadMessages(){
   try{
-    const res = await window.storage.get('toutasworld_messages', true);
-    messages = res && res.value ? JSON.parse(res.value) : [];
-  }catch(e){ messages = []; }
+    const snap = await getDoc(doc(db, "toutasworld", "messages"));
+    messages = snap.exists() && snap.data().list ? snap.data().list : [];
+  }catch(e){ console.error(e); messages = []; }
 }
-async function saveMessages(){ await window.storage.set('toutasworld_messages', JSON.stringify(messages), true); }
+async function saveMessages(){
+  try{ await setDoc(doc(db, "toutasworld", "messages"), { list: messages }); }
+  catch(e){ console.error(e); alert("Could not send your message — please check your connection and try again."); }
+}
 
 function renderMysteryScoops(){
   const grid = document.getElementById('mysteryGrid');
